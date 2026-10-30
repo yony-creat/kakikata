@@ -25,22 +25,22 @@
     .feedback-left { display: flex; align-items: center; gap: 8px; flex: 1; }
     .feedback-text { color: #5A4A3A; font-size: 13px; font-weight: 600; line-height: 1.4; }
     
-    /* 발음 듣기 버튼 */
     .btn-audio { background: #FFF0F5; border: 1.5px solid #FF8DA1; color: #FF8DA1; padding: 6px 12px; border-radius: 12px; font-weight: bold; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; transition: all 0.2s; }
     .btn-audio:active { background: #FF8DA1; color: white; }
 
     .canvas-container { position: relative; width: 280px; height: 280px; background: white; border: 3px solid #FFD1DC; border-radius: 24px; box-shadow: 0 8px 20px rgba(255,183,197,0.25); overflow: hidden; margin: 6px 0; touch-action: none; }
     
-    /* 요음 및 촉음 배경 가이드 디스플레이 레벨링 */
     .guide-text { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; font-weight: bold; color: rgba(255,180,190,0.35); pointer-events: none; user-select: none; }
     .guide-text.normal { font-size: 160px; }
-    .guide-text.sokuon { position: relative; width: 100%; height: 100%; }
-    .guide-text.sokuon .small-tsu { position: absolute; bottom: 35px; right: 40px; font-size: 85px; }
-    .guide-text.youon { display: flex; justify-content: center; align-items: flex-end; padding-bottom: 25px; width: 100%; height: 100%; }
-    .guide-text.youon .main-char { font-size: 130px; line-height: 1; }
-    .guide-text.youon .sub-char { font-size: 70px; line-height: 1; margin-left: -5px; margin-bottom: 10px; }
+    
+    .guide-text.sokuon { display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; }
+    .guide-text.sokuon .small-tsu { font-size: 90px; transform: translate(35px, 35px); }
 
-    canvas { width: 100%; height: 100%; cursor: crosshair; }
+    .guide-text.youon { display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; }
+    .guide-text.youon .main-char { font-size: 125px; line-height: 1; }
+    .guide-text.youon .sub-char { font-size: 68px; line-height: 1; margin-left: -2px; transform: translateY(22px); }
+
+    canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; cursor: crosshair; }
 
     .btn-group { display: flex; gap: 12px; margin-top: 10px; }
     .btn-action { padding: 12px 22px; border: none; border-radius: 18px; font-size: 15px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
@@ -164,16 +164,15 @@
       clearCanvas();
       
       const msg = document.getElementById('feedbackMsg');
-      if (char === 'っ') msg.innerText = "‘っ’ (촉음): 오른쪽 아래 작게 쓰는 게 핵심이에요!";
+      if (char === 'っ') msg.innerText = "‘っ’ (촉음): 오른쪽 아래 칸에 작게 써보세요!";
       else if (char.length > 1) msg.innerText = `‘${char}’ (요음): 오른쪽 아래 작은 글자 비율을 맞춰보세요!`;
       else if (currentCategory === 'dakuon') msg.innerText = `‘${char}’ (탁음): 본체 작성 후 점(゛/゜)을 찍어보세요!`;
       else msg.innerText = `‘${char}’ 획의 순서와 방향에 맞춰 예쁘게 써보세요!`;
 
-      // 글자 선택 시 자동으로 발음 재생
+      // 글자 카드 선택 시 발음 재생
       speakCharacter();
     }
 
-    // 요음/촉음 레이아웃 분기
     function updateGuideTextDisplay(char) {
       const guide = document.getElementById('guideText');
       if (char === 'っ') {
@@ -188,14 +187,17 @@
       }
     }
 
-    // TTS 발음 기능
+    // TTS 음성 재생 보정
     function speakCharacter() {
       if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel(); // 이전 발음 중단
-        const utterance = new SpeechSynthesisUtterance(selectedChar);
-        utterance.lang = 'ja-JP';
-        utterance.rate = 0.85; // 약 15% 느린 속도로 선명하게 발음
-        window.speechSynthesis.speak(utterance);
+        window.speechSynthesis.cancel();
+        
+        setTimeout(() => {
+          const utterance = new SpeechSynthesisUtterance(selectedChar);
+          utterance.lang = 'ja-JP';
+          utterance.rate = 0.85;
+          window.speechSynthesis.speak(utterance);
+        }, 50);
       }
     }
 
@@ -242,8 +244,8 @@
       canvas.addEventListener('mousemove', move);
       window.addEventListener('mouseup', stop);
 
-      canvas.addEventListener('touchstart', start);
-      canvas.addEventListener('touchmove', move);
+      canvas.addEventListener('touchstart', start, { passive: true });
+      canvas.addEventListener('touchmove', move, { passive: true });
       window.addEventListener('touchend', stop);
     }
 
@@ -253,7 +255,7 @@
       const desc = document.getElementById('modalDesc');
       const badgeArea = document.getElementById('stampBadgeArea');
 
-      if (drawnPoints.length < 15) {
+      if (drawnPoints.length < 10) {
         title.innerText = "😅 글씨를 먼저 써주세요!";
         title.style.color = "#FF6B6B";
         scoreElem.innerText = "0점";
@@ -263,9 +265,7 @@
         return;
       }
 
-      // 캔버스 정밀 픽셀 스캔 분석
       let score = calculateAccuracyScore();
-
       scoreElem.innerText = `${score}점`;
 
       if (score >= 70) {
@@ -274,7 +274,6 @@
         desc.innerHTML = `<b>‘${selectedChar}’</b> 글씨를 멋지게 완성했습니다!`;
         badgeArea.innerHTML = `<div class="stamp-badge">💮 참 잘했어요 스티커 획득!</div>`;
         
-        // 도장 저장
         completedChars[selectedChar] = true;
         localStorage.setItem('hiragana_completed_v2', JSON.stringify(completedChars));
         updateStampSummary();
@@ -288,61 +287,56 @@
 
       document.getElementById('resultModal').style.display = 'flex';
     }
-function calculateAccuracyScore() {
-  const offCanvas = document.createElement('canvas');
-  offCanvas.width = 280; offCanvas.height = 280;
-  const offCtx = offCanvas.getContext('2d');
 
-  // 가이드라인 비교용 폰트 그리기 (선 두께 보정을 위해 굵게 설정)
-  offCtx.font = "bold 160px sans-serif";
-  offCtx.textAlign = "center";
-  offCtx.textBaseline = "middle";
-  
-  if (selectedChar === 'っ') {
-    offCtx.font = "bold 90px sans-serif";
-    offCtx.fillText(selectedChar, 175, 175);
-  } else if (selectedChar.length === 2) {
-    offCtx.font = "bold 125px sans-serif";
-    offCtx.fillText(selectedChar[0], 100, 140);
-    offCtx.font = "bold 68px sans-serif";
-    offCtx.fillText(selectedChar[1], 185, 162);
-  } else {
-    offCtx.fillText(selectedChar, 140, 140);
-  }
+    // 완화 및 보정된 점수 판정 알고리즘
+    function calculateAccuracyScore() {
+      const offCanvas = document.createElement('canvas');
+      offCanvas.width = 280; offCanvas.height = 280;
+      const offCtx = offCanvas.getContext('2d');
 
-  const targetData = offCtx.getImageData(0,0,280,280).data;
-  const userCanvasData = ctx.getImageData(0,0,280,280).data;
+      offCtx.font = "bold 160px sans-serif";
+      offCtx.textAlign = "center";
+      offCtx.textBaseline = "middle";
+      
+      if (selectedChar === 'っ') {
+        offCtx.font = "bold 90px sans-serif";
+        offCtx.fillText(selectedChar, 175, 175);
+      } else if (selectedChar.length === 2) {
+        offCtx.font = "bold 125px sans-serif";
+        offCtx.fillText(selectedChar[0], 100, 140);
+        offCtx.font = "bold 68px sans-serif";
+        offCtx.fillText(selectedChar[1], 185, 162);
+      } else {
+        offCtx.fillText(selectedChar, 140, 140);
+      }
 
-  let targetPixels = 0;
-  let matchedPixels = 0;
+      const targetData = offCtx.getImageData(0,0,280,280).data;
+      const userCanvasData = ctx.getImageData(0,0,280,280).data;
 
-  // 픽셀 스캔 방식 완화 (가이드라인 뼈대를 얼마나 채웠는지 위주로 측정)
-  for (let i = 3; i < targetData.length; i += 4) {
-    const isTarget = targetData[i] > 30;
-    const isUser = userCanvasData[i] > 30;
+      let targetPixels = 0;
+      let matchedPixels = 0;
 
-    if (isTarget) {
-      targetPixels++;
-      if (isUser) matchedPixels++;
+      for (let i = 3; i < targetData.length; i += 4) {
+        const isTarget = targetData[i] > 30;
+        const isUser = userCanvasData[i] > 30;
+
+        if (isTarget) {
+          targetPixels++;
+          if (isUser) matchedPixels++;
+        }
+      }
+
+      if (targetPixels === 0) return 85;
+
+      const coverage = matchedPixels / targetPixels;
+      let finalScore = Math.round(coverage * 100) + 25;
+      
+      if (drawnPoints.length > 20 && finalScore < 80) {
+        finalScore = 80 + Math.floor(Math.random() * 8);
+      }
+
+      return Math.min(100, Math.max(40, finalScore));
     }
-  }
-
-  if (targetPixels === 0) return 85;
-
-  // 가이드 커버율 계산
-  const coverage = matchedPixels / targetPixels;
-  
-  // 지금처럼 모양을 제대로 맞추어 썼다면 85~98점의 높은 점수가 나오도록 너그럽게 보정
-  let finalScore = Math.round(coverage * 100) + 25;
-  
-  // 획을 일정 이상 그렸다면 최소 80점 보장
-  if (drawnPoints.length > 20 && finalScore < 80) {
-    finalScore = 80 + Math.floor(Math.random() * 8);
-  }
-
-  return Math.min(100, Math.max(40, finalScore));
-}
-
 
     function updateStampSummary() {
       const totalCount = Object.keys(completedChars).length;
@@ -365,7 +359,6 @@ function calculateAccuracyScore() {
       document.getElementById('feedbackIcon').innerText = '💡';
     }
 
-  
     init();
   </script>
 </body>
