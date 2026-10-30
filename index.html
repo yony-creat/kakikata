@@ -288,53 +288,61 @@
 
       document.getElementById('resultModal').style.display = 'flex';
     }
+function calculateAccuracyScore() {
+  const offCanvas = document.createElement('canvas');
+  offCanvas.width = 280; offCanvas.height = 280;
+  const offCtx = offCanvas.getContext('2d');
 
-    function calculateAccuracyScore() {
-      // 오프스크린 캔버스로 커버리지 비교
-      const offCanvas = document.createElement('canvas');
-      offCanvas.width = 280; offCanvas.height = 280;
-      const offCtx = offCanvas.getContext('2d');
+  // 가이드라인 비교용 폰트 그리기 (선 두께 보정을 위해 굵게 설정)
+  offCtx.font = "bold 160px sans-serif";
+  offCtx.textAlign = "center";
+  offCtx.textBaseline = "middle";
+  
+  if (selectedChar === 'っ') {
+    offCtx.font = "bold 90px sans-serif";
+    offCtx.fillText(selectedChar, 175, 175);
+  } else if (selectedChar.length === 2) {
+    offCtx.font = "bold 125px sans-serif";
+    offCtx.fillText(selectedChar[0], 100, 140);
+    offCtx.font = "bold 68px sans-serif";
+    offCtx.fillText(selectedChar[1], 185, 162);
+  } else {
+    offCtx.fillText(selectedChar, 140, 140);
+  }
 
-      offCtx.font = "bold 160px sans-serif";
-      offCtx.textAlign = "center";
-      offCtx.textBaseline = "middle";
-      
-      if (selectedChar === 'っ') {
-        offCtx.font = "bold 85px sans-serif";
-        offCtx.fillText(selectedChar, 195, 195);
-      } else if (selectedChar.length === 2) {
-        offCtx.font = "bold 130px sans-serif";
-        offCtx.fillText(selectedChar[0], 100, 140);
-        offCtx.font = "bold 70px sans-serif";
-        offCtx.fillText(selectedChar[1], 195, 175);
-      } else {
-        offCtx.fillText(selectedChar, 140, 140);
-      }
+  const targetData = offCtx.getImageData(0,0,280,280).data;
+  const userCanvasData = ctx.getImageData(0,0,280,280).data;
 
-      const targetData = offCtx.getImageData(0,0,280,280).data;
-      const userCanvasData = ctx.getImageData(0,0,280,280).data;
+  let targetPixels = 0;
+  let matchedPixels = 0;
 
-      let targetPixels = 0;
-      let matchedPixels = 0;
-      let userPixels = 0;
+  // 픽셀 스캔 방식 완화 (가이드라인 뼈대를 얼마나 채웠는지 위주로 측정)
+  for (let i = 3; i < targetData.length; i += 4) {
+    const isTarget = targetData[i] > 30;
+    const isUser = userCanvasData[i] > 30;
 
-      for (let i = 3; i < targetData.length; i += 4) {
-        const isTarget = targetData[i] > 50;
-        const isUser = userCanvasData[i] > 50;
-
-        if (isTarget) targetPixels++;
-        if (isUser) userPixels++;
-        if (isTarget && isUser) matchedPixels++;
-      }
-
-      if (targetPixels === 0) return 75;
-
-      const recall = matchedPixels / targetPixels; // 가이드라인 채운 비율
-      const precision = userPixels > 0 ? matchedPixels / userPixels : 0; // 이탈하지 않은 비율
-      
-      let finalScore = Math.round((recall * 0.65 + precision * 0.35) * 100) + 20;
-      return Math.min(100, Math.max(35, finalScore));
+    if (isTarget) {
+      targetPixels++;
+      if (isUser) matchedPixels++;
     }
+  }
+
+  if (targetPixels === 0) return 85;
+
+  // 가이드 커버율 계산
+  const coverage = matchedPixels / targetPixels;
+  
+  // 지금처럼 모양을 제대로 맞추어 썼다면 85~98점의 높은 점수가 나오도록 너그럽게 보정
+  let finalScore = Math.round(coverage * 100) + 25;
+  
+  // 획을 일정 이상 그렸다면 최소 80점 보장
+  if (drawnPoints.length > 20 && finalScore < 80) {
+    finalScore = 80 + Math.floor(Math.random() * 8);
+  }
+
+  return Math.min(100, Math.max(40, finalScore));
+}
+
 
     function updateStampSummary() {
       const totalCount = Object.keys(completedChars).length;
@@ -357,6 +365,7 @@
       document.getElementById('feedbackIcon').innerText = '💡';
     }
 
+  
     init();
   </script>
 </body>
