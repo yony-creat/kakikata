@@ -6,37 +6,56 @@
   <title>히라가나 손글씨 교정 🌸</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: #FFF9FA; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding-bottom: 20px; }
+    body { background-color: #FFF9FA; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding-bottom: 25px; }
     
-    /* 상단 헤더 & 탭 가독성 강화 */
     header { width: 100%; background-color: #FF8DA1; color: white; text-align: center; padding: 16px 0 10px 0; font-weight: bold; font-size: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
     .tabs { display: flex; width: 100%; background-color: #FF8DA1; border-top: 1px solid rgba(255,255,255,0.4); }
-    .tab-btn { flex: 1; padding: 12px 0; border: none; background: none; color: #FFF0F3; font-weight: bold; font-size: 15px; cursor: pointer; border-bottom: 4px solid transparent; transition: all 0.2s; }
+    .tab-btn { flex: 1; padding: 12px 0; border: none; background: none; color: #FFF0F3; font-weight: bold; font-size: 14px; cursor: pointer; border-bottom: 4px solid transparent; transition: all 0.2s; }
     .tab-btn.active { color: #FFFFFF; border-bottom-color: #FFFFFF; font-weight: 800; background-color: rgba(255, 255, 255, 0.15); }
 
-    /* 글자 선택 목록 */
     .char-scroll { width: 100%; display: flex; overflow-x: auto; padding: 12px 16px; gap: 8px; border-bottom: 1px solid #FFD1DC; white-space: nowrap; background: #FFF; }
-    .char-card { padding: 8px 16px; background: white; border: 2px solid #FFD1DC; border-radius: 16px; color: #7A6851; font-weight: bold; font-size: 18px; cursor: pointer; flex-shrink: 0; }
+    .char-card { padding: 8px 16px; background: white; border: 2px solid #FFD1DC; border-radius: 16px; color: #7A6851; font-weight: bold; font-size: 18px; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; gap: 4px; }
     .char-card.active { background: #FF8DA1; color: white; border-color: #FF8DA1; }
+    .char-card.completed::after { content: "★"; color: #FFD700; font-size: 12px; margin-left: 2px; }
 
-    /* 피드백 안내 카드 */
-    .feedback-box { width: 90%; max-width: 340px; margin: 14px auto; padding: 12px 16px; background: white; border-radius: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 10px; border: 1px solid #FFE4E1; }
-    .feedback-text { color: #5A4A3A; font-size: 14px; font-weight: 600; line-height: 1.4; }
+    .stamp-board-summary { width: 90%; max-width: 340px; margin: 10px auto 0 auto; background: #FFF0F3; border: 1.5px solid #FFD1DC; border-radius: 16px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: bold; color: #7A6851; }
+    .stamp-count { color: #FF8DA1; font-size: 15px; }
 
-    /* 캔버스 영역 */
-    .canvas-container { position: relative; width: 280px; height: 280px; background: white; border: 3px solid #FFD1DC; border-radius: 24px; box-shadow: 0 8px 20px rgba(255,183,197,0.25); overflow: hidden; margin: 8px 0; touch-action: none; }
-    .guide-text { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; font-size: 150px; font-weight: bold; color: rgba(255,228,225,0.6); pointer-events: none; user-select: none; }
+    .feedback-box { width: 90%; max-width: 340px; margin: 10px auto; padding: 12px 16px; background: white; border-radius: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: space-between; border: 1px solid #FFE4E1; }
+    .feedback-left { display: flex; align-items: center; gap: 8px; flex: 1; }
+    .feedback-text { color: #5A4A3A; font-size: 13px; font-weight: 600; line-height: 1.4; }
+    
+    /* 발음 듣기 버튼 */
+    .btn-audio { background: #FFF0F5; border: 1.5px solid #FF8DA1; color: #FF8DA1; padding: 6px 12px; border-radius: 12px; font-weight: bold; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; transition: all 0.2s; }
+    .btn-audio:active { background: #FF8DA1; color: white; }
+
+    .canvas-container { position: relative; width: 280px; height: 280px; background: white; border: 3px solid #FFD1DC; border-radius: 24px; box-shadow: 0 8px 20px rgba(255,183,197,0.25); overflow: hidden; margin: 6px 0; touch-action: none; }
+    
+    /* 요음 및 촉음 배경 가이드 디스플레이 레벨링 */
+    .guide-text { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; font-weight: bold; color: rgba(255,180,190,0.35); pointer-events: none; user-select: none; }
+    .guide-text.normal { font-size: 160px; }
+    .guide-text.sokuon { position: relative; width: 100%; height: 100%; }
+    .guide-text.sokuon .small-tsu { position: absolute; bottom: 35px; right: 40px; font-size: 85px; }
+    .guide-text.youon { display: flex; justify-content: center; align-items: flex-end; padding-bottom: 25px; width: 100%; height: 100%; }
+    .guide-text.youon .main-char { font-size: 130px; line-height: 1; }
+    .guide-text.youon .sub-char { font-size: 70px; line-height: 1; margin-left: -5px; margin-bottom: 10px; }
+
     canvas { width: 100%; height: 100%; cursor: crosshair; }
 
-    /* 하단 버튼 */
-    .btn-clear { margin-top: 14px; padding: 12px 28px; background: #FF8DA1; color: white; border: none; border-radius: 18px; font-size: 15px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(255,141,161,0.3); }
+    .btn-group { display: flex; gap: 12px; margin-top: 10px; }
+    .btn-action { padding: 12px 22px; border: none; border-radius: 18px; font-size: 15px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .btn-clear { background: #FFA07A; color: white; }
+    .btn-submit { background: #FF8DA1; color: white; }
 
-    /* 완성 결과 팝업 모달 */
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); justify-content: center; align-items: center; z-index: 1000; }
-    .modal-content { background: white; padding: 24px 28px; border-radius: 24px; text-align: center; max-width: 300px; width: 85%; box-shadow: 0 10px 25px rgba(0,0,0,0.15); animation: popUp 0.25s ease-out; }
+    .modal-content { background: white; padding: 24px 28px; border-radius: 24px; text-align: center; max-width: 310px; width: 85%; box-shadow: 0 10px 25px rgba(0,0,0,0.15); animation: popUp 0.25s ease-out; }
     @keyframes popUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-    .modal-title { font-size: 20px; font-weight: bold; color: #4ECDC4; margin-bottom: 8px; }
-    .modal-desc { font-size: 14px; color: #666; margin-bottom: 20px; line-height: 1.4; }
+    .modal-title { font-size: 20px; font-weight: bold; margin-bottom: 8px; }
+    .modal-score { font-size: 26px; font-weight: 800; color: #FF8DA1; margin: 6px 0 10px 0; }
+    .modal-desc { font-size: 14px; color: #666; margin-bottom: 18px; line-height: 1.4; }
+    .stamp-badge { display: inline-block; background: #FFF0F3; border: 2px dashed #FF8DA1; color: #FF8DA1; font-weight: bold; padding: 6px 14px; border-radius: 20px; margin-bottom: 14px; animation: bounce 0.5s ease; }
+    @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
     .modal-btns { display: flex; gap: 10px; justify-content: center; }
     .modal-btn { flex: 1; padding: 10px 0; border-radius: 14px; border: none; font-weight: bold; font-size: 14px; cursor: pointer; }
     .btn-retry { background: #FF8DA1; color: white; }
@@ -55,9 +74,17 @@
 
   <div class="char-scroll" id="charList"></div>
 
+  <div class="stamp-board-summary">
+    <span>🌸 참 잘했어요 스티커 판</span>
+    <span class="stamp-count" id="stampCountText">0 / 105 개</span>
+  </div>
+
   <div class="feedback-box">
-    <span id="feedbackIcon" style="font-size:22px;">💡</span>
-    <span class="feedback-text" id="feedbackMsg">‘あ’ 획의 순서와 방향에 맞춰 예쁘게 써보세요! 🌸</span>
+    <div class="feedback-left">
+      <span id="feedbackIcon" style="font-size:20px;">💡</span>
+      <span class="feedback-text" id="feedbackMsg">‘あ’ 획의 순서와 방향에 맞춰 예쁘게 써보세요!</span>
+    </div>
+    <button class="btn-audio" onclick="speakCharacter()">🔊 발음 듣기</button>
   </div>
 
   <div class="canvas-container">
@@ -65,13 +92,17 @@
     <canvas id="paintCanvas" width="280" height="280"></canvas>
   </div>
 
-  <button class="btn-clear" onclick="clearCanvas()">🌸 다시 쓰기</button>
+  <div class="btn-group">
+    <button class="btn-action btn-clear" onclick="clearCanvas()">지우기</button>
+    <button class="btn-action btn-submit" onclick="evaluateHandwriting()">✨ 제출 및 채점</button>
+  </div>
 
-  <!-- 완판 안내 팝업 -->
   <div class="modal-overlay" id="resultModal">
     <div class="modal-content">
-      <div class="modal-title">🎉 참 잘했어요!</div>
-      <div class="modal-desc"><b id="modalCharName">‘あ’</b> 글씨를 멋지게 완성했습니다.<br>다시 써보시겠어요?</div>
+      <div class="modal-title" id="modalTitle">🎉 참 잘했어요!</div>
+      <div class="modal-score" id="modalScore">85점</div>
+      <div id="stampBadgeArea"></div>
+      <div class="modal-desc" id="modalDesc"><b>‘あ’</b> 글씨를 멋지게 완성했습니다.</div>
       <div class="modal-btns">
         <button class="modal-btn btn-close" onclick="closeModal()">닫기</button>
         <button class="modal-btn btn-retry" onclick="retryFromModal()">다시 쓰기</button>
@@ -89,7 +120,8 @@
     let currentCategory = 'basic';
     let selectedChar = 'あ';
     let isDrawing = false;
-    let strokeCount = 0;
+    let drawnPoints = [];
+    let completedChars = JSON.parse(localStorage.getItem('hiragana_completed_v2') || '{}');
 
     const canvas = document.getElementById('paintCanvas');
     const ctx = canvas.getContext('2d');
@@ -98,6 +130,8 @@
       drawGrid();
       renderCharList();
       setupCanvasEvents();
+      updateStampSummary();
+      updateGuideTextDisplay(selectedChar);
     }
 
     function switchTab(category) {
@@ -115,7 +149,8 @@
       container.innerHTML = '';
       data[currentCategory].forEach(char => {
         const btn = document.createElement('div');
-        btn.className = `char-card ${char === selectedChar ? 'active' : ''}`;
+        const isDone = completedChars[char];
+        btn.className = `char-card ${char === selectedChar ? 'active' : ''} ${isDone ? 'completed' : ''}`;
         btn.innerText = char;
         btn.onclick = () => selectChar(char);
         container.appendChild(btn);
@@ -124,15 +159,44 @@
 
     function selectChar(char) {
       selectedChar = char;
-      document.getElementById('guideText').innerText = char;
+      updateGuideTextDisplay(char);
       renderCharList();
       clearCanvas();
       
       const msg = document.getElementById('feedbackMsg');
-      if (char === 'っ') msg.innerText = "‘っ’ (촉음): 오른쪽 아래 작게 쓰는 게 포인트예요! ✨";
-      else if (char.length > 1) msg.innerText = `‘${char}’ (요음): 오른쪽 아래 작은 글자 비율에 유의하세요! 💡`;
-      else if (currentCategory === 'dakuon') msg.innerText = `‘${char}’ (탁음): 본체 작성 후 점(゛/゜)을 찍어보세요! 💡`;
-      else msg.innerText = `‘${char}’ 획의 순서와 방향에 맞춰 예쁘게 써보세요! 🌸`;
+      if (char === 'っ') msg.innerText = "‘っ’ (촉음): 오른쪽 아래 작게 쓰는 게 핵심이에요!";
+      else if (char.length > 1) msg.innerText = `‘${char}’ (요음): 오른쪽 아래 작은 글자 비율을 맞춰보세요!`;
+      else if (currentCategory === 'dakuon') msg.innerText = `‘${char}’ (탁음): 본체 작성 후 점(゛/゜)을 찍어보세요!`;
+      else msg.innerText = `‘${char}’ 획의 순서와 방향에 맞춰 예쁘게 써보세요!`;
+
+      // 글자 선택 시 자동으로 발음 재생
+      speakCharacter();
+    }
+
+    // 요음/촉음 레이아웃 분기
+    function updateGuideTextDisplay(char) {
+      const guide = document.getElementById('guideText');
+      if (char === 'っ') {
+        guide.className = 'guide-text sokuon';
+        guide.innerHTML = `<span class="small-tsu">っ</span>`;
+      } else if (char.length === 2) {
+        guide.className = 'guide-text youon';
+        guide.innerHTML = `<span class="main-char">${char[0]}</span><span class="sub-char">${char[1]}</span>`;
+      } else {
+        guide.className = 'guide-text normal';
+        guide.innerText = char;
+      }
+    }
+
+    // TTS 발음 기능
+    function speakCharacter() {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel(); // 이전 발음 중단
+        const utterance = new SpeechSynthesisUtterance(selectedChar);
+        utterance.lang = 'ja-JP';
+        utterance.rate = 0.85; // 약 15% 느린 속도로 선명하게 발음
+        window.speechSynthesis.speak(utterance);
+      }
     }
 
     function drawGrid() {
@@ -156,34 +220,23 @@
         isDrawing = true; 
         ctx.beginPath(); 
         const p = getPos(e); 
-        ctx.moveTo(p.x, p.y); 
+        ctx.moveTo(p.x, p.y);
+        drawnPoints.push(p);
       };
 
       const move = (e) => {
         if (!isDrawing) return;
         const p = getPos(e);
         ctx.strokeStyle = '#8A70D6';
-        ctx.lineWidth = 8;
+        ctx.lineWidth = 9;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         ctx.lineTo(p.x, p.y);
         ctx.stroke();
+        drawnPoints.push(p);
       };
 
-      const stop = () => {
-        if (isDrawing) {
-          isDrawing = false;
-          strokeCount++;
-
-          document.getElementById('feedbackIcon').innerText = '🎉';
-          document.getElementById('feedbackMsg').innerText = `‘${selectedChar}’ 획을 멋지게 그렸어요! 완성도가 높네요! ✨🌸`;
-
-          // 획 작성을 마치면 완성 팝업 호출 (0.5초 후 자연스럽게)
-          setTimeout(() => {
-            showResultModal();
-          }, 400);
-        }
-      };
+      const stop = () => { isDrawing = false; };
 
       canvas.addEventListener('mousedown', start);
       canvas.addEventListener('mousemove', move);
@@ -194,9 +247,98 @@
       window.addEventListener('touchend', stop);
     }
 
-    function showResultModal() {
-      document.getElementById('modalCharName').innerText = `‘${selectedChar}’`;
+    function evaluateHandwriting() {
+      const title = document.getElementById('modalTitle');
+      const scoreElem = document.getElementById('modalScore');
+      const desc = document.getElementById('modalDesc');
+      const badgeArea = document.getElementById('stampBadgeArea');
+
+      if (drawnPoints.length < 15) {
+        title.innerText = "😅 글씨를 먼저 써주세요!";
+        title.style.color = "#FF6B6B";
+        scoreElem.innerText = "0점";
+        badgeArea.innerHTML = "";
+        desc.innerHTML = `캔버스에 <b>‘${selectedChar}’</b> 글씨를 쓴 후 제출해 주세요.`;
+        document.getElementById('resultModal').style.display = 'flex';
+        return;
+      }
+
+      // 캔버스 정밀 픽셀 스캔 분석
+      let score = calculateAccuracyScore();
+
+      scoreElem.innerText = `${score}점`;
+
+      if (score >= 70) {
+        title.innerText = "🎉 합격! 참 잘했어요!";
+        title.style.color = "#4ECDC4";
+        desc.innerHTML = `<b>‘${selectedChar}’</b> 글씨를 멋지게 완성했습니다!`;
+        badgeArea.innerHTML = `<div class="stamp-badge">💮 참 잘했어요 스티커 획득!</div>`;
+        
+        // 도장 저장
+        completedChars[selectedChar] = true;
+        localStorage.setItem('hiragana_completed_v2', JSON.stringify(completedChars));
+        updateStampSummary();
+        renderCharList();
+      } else {
+        title.innerText = "💪 조금 더 잘 쓸 수 있어요!";
+        title.style.color = "#FFA07A";
+        desc.innerHTML = `<b>‘${selectedChar}’</b> 글씨를 가이드 모양에 더 가깝게 다시 써볼까요?`;
+        badgeArea.innerHTML = "";
+      }
+
       document.getElementById('resultModal').style.display = 'flex';
+    }
+
+    function calculateAccuracyScore() {
+      // 오프스크린 캔버스로 커버리지 비교
+      const offCanvas = document.createElement('canvas');
+      offCanvas.width = 280; offCanvas.height = 280;
+      const offCtx = offCanvas.getContext('2d');
+
+      offCtx.font = "bold 160px sans-serif";
+      offCtx.textAlign = "center";
+      offCtx.textBaseline = "middle";
+      
+      if (selectedChar === 'っ') {
+        offCtx.font = "bold 85px sans-serif";
+        offCtx.fillText(selectedChar, 195, 195);
+      } else if (selectedChar.length === 2) {
+        offCtx.font = "bold 130px sans-serif";
+        offCtx.fillText(selectedChar[0], 100, 140);
+        offCtx.font = "bold 70px sans-serif";
+        offCtx.fillText(selectedChar[1], 195, 175);
+      } else {
+        offCtx.fillText(selectedChar, 140, 140);
+      }
+
+      const targetData = offCtx.getImageData(0,0,280,280).data;
+      const userCanvasData = ctx.getImageData(0,0,280,280).data;
+
+      let targetPixels = 0;
+      let matchedPixels = 0;
+      let userPixels = 0;
+
+      for (let i = 3; i < targetData.length; i += 4) {
+        const isTarget = targetData[i] > 50;
+        const isUser = userCanvasData[i] > 50;
+
+        if (isTarget) targetPixels++;
+        if (isUser) userPixels++;
+        if (isTarget && isUser) matchedPixels++;
+      }
+
+      if (targetPixels === 0) return 75;
+
+      const recall = matchedPixels / targetPixels; // 가이드라인 채운 비율
+      const precision = userPixels > 0 ? matchedPixels / userPixels : 0; // 이탈하지 않은 비율
+      
+      let finalScore = Math.round((recall * 0.65 + precision * 0.35) * 100) + 20;
+      return Math.min(100, Math.max(35, finalScore));
+    }
+
+    function updateStampSummary() {
+      const totalCount = Object.keys(completedChars).length;
+      document.getElementById('stampCountText').innerText = `${totalCount} / 105 개`;
     }
 
     function closeModal() {
@@ -211,7 +353,7 @@
     function clearCanvas() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawGrid();
-      strokeCount = 0;
+      drawnPoints = [];
       document.getElementById('feedbackIcon').innerText = '💡';
     }
 
