@@ -1,0 +1,415 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const HiraganaApp());
+}
+
+class HiraganaApp extends StatelessWidget {
+  const HiraganaApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        fontFamily: 'Pretendard',
+        scaffoldBackgroundColor: const Color(0xFFFFF9FA),
+      ),
+      home: const HandwritingCanvasScreen(),
+    );
+  }
+}
+
+class DrawnPoint {
+  final Offset offset;
+  final Color color;
+  DrawnPoint(this.offset, this.color);
+}
+
+class HandwritingCanvasScreen extends StatefulWidget {
+  const HandwritingCanvasScreen({super.key});
+
+  @override
+  State<HandwritingCanvasScreen> createState() => _HandwritingCanvasScreenState();
+}
+
+class _HandwritingCanvasScreenState extends State<HandwritingCanvasScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  // 히라가나 46자 전체 목록 (오음순)
+  final List<String> basicList = [
+    'あ', 'い', 'う', 'え', 'お',
+    'か', 'き', 'く', 'け', 'こ',
+    'さ', 'し', 'す', 'せ', 'そ',
+    'た', 'ち', 'つ', 'て', 'と',
+    'な', 'に', 'ぬ', 'ね', 'の',
+    'は', 'ひ', 'ふ', 'へ', 'ほ',
+    'ま', 'み', 'む', 'め', 'も',
+    'や', 'ゆ', 'よ',
+    'ら', 'り', 'る', 'れ', 'ろ',
+    'わ', 'を', 'ん'
+  ];
+
+  // 탁음 & 반탁음 전체 25자
+  final List<String> dakuonList = [
+    'が', 'ぎ', 'ぐ', 'げ', 'ご',
+    'ざ', 'じ', 'ず', 'ぜ', 'ぞ',
+    'だ', 'ぢ', 'づ', 'で', 'ど',
+    'ば', 'び', 'ぶ', 'べ', 'ぼ',
+    'ぱ', 'ぴ', 'ぷ', 'ぺ', 'ぽ'
+  ];
+
+  // 요음 & 촉음 전체 34자
+  final List<String> youonList = [
+    'きゃ', 'きゅ', 'きょ',
+    'しゃ', 'しゅ', 'しょ',
+    'ちゃ', 'ちゅ', 'ちょ',
+    'にゃ', 'にゅ', 'にょ',
+    'ひゃ', 'ひゅ', 'ひょ',
+    'みゃ', 'みゅ', 'みょ',
+    'りゃ', 'りゅ', 'りょ',
+    'ぎゃ', 'ぎゅ', 'ぎょ',
+    'じゃ', 'じゅ', 'じょ',
+    'びゃ', 'びゅ', 'びょ',
+    'ぴゃ', 'ぴゅ', 'ぴょ',
+    'っ'
+  ];
+
+  String selectedChar = 'あ';
+  List<List<DrawnPoint>> strokes = [];
+  List<DrawnPoint> currentStroke = [];
+
+  String feedbackMessage = "‘あ’ 획의 순서와 방향에 맞춰 예쁘게 써보세요! 🌸";
+  Color feedbackColor = const Color(0xFF7A6851);
+  bool isSuccess = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _selectCharacter(String char) {
+    setState(() {
+      selectedChar = char;
+      strokes.clear();
+      currentStroke.clear();
+      isSuccess = false;
+      
+      if (char == 'っ') {
+        feedbackMessage = "‘っ’ (촉음): 오른쪽 아래에 작게 쓰는 것이 포인트예요! ✨";
+      } else if (char.length > 1) {
+        feedbackMessage = "‘$char’ (요음): 오른쪽 아래 작은 글자의 비율과 위치에 유의하세요! 💡";
+      } else if (dakuonList.contains(char)) {
+        feedbackMessage = "‘$char’ (탁음/반탁음): 본체를 다 쓴 후 마지막에 점(゛/゜)을 찍어보세요! 💡";
+      } else {
+        feedbackMessage = "‘$char’ 획의 순서와 방향에 맞춰 예쁘게 써보세요! 🌸";
+      }
+      feedbackColor = const Color(0xFF7A6851);
+    });
+  }
+
+  void _analyzeStroke() {
+    if (currentStroke.length < 5) return;
+
+    setState(() {
+      feedbackMessage = "‘$selectedChar’ 글씨를 멋지게 쓰는 중이에요! 참 잘했어요! ✨🌸";
+      feedbackColor = const Color(0xFF4ECDC4);
+      isSuccess = true;
+    });
+  }
+
+  void _clearCanvas() {
+    setState(() {
+      strokes.clear();
+      currentStroke.clear();
+      _selectCharacter(selectedChar);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFFFB7C5),
+        title: const Text(
+          "히라가나 손글씨 교정 🌸",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        elevation: 0,
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: Colors.white,
+          indicatorWeight: 3,
+          labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          tabs: const [
+            Tab(text: "기본음 (46자)"),
+            Tab(text: "탁음/반탁음"),
+            Tab(text: "요음/촉음"),
+          ],
+        ),
+      ),
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          children: [
+            SizedBox(
+              height: 65,
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildCharGrid(basicList),
+                  _buildCharGrid(dakuonList),
+                  _buildCharGrid(youonList),
+                ],
+              ),
+            ),
+            const Divider(height: 1, color: Color(0xFFFFD1DC)),
+            const SizedBox(height: 10),
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  )
+                ],
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    isSuccess ? "🎉" : "💡",
+                    style: const TextStyle(fontSize: 20),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      feedbackMessage,
+                      style: TextStyle(
+                        color: feedbackColor,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Center(
+              child: Container(
+                width: 280,
+                height: 280,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: const Color(0xFFFFD1DC), width: 3),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFFFB7C5).withOpacity(0.2),
+                      blurRadius: 15,
+                      spreadRadius: 2,
+                    )
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(21),
+                  child: GestureDetector(
+                    onPanStart: (details) {
+                      setState(() {
+                        RenderBox renderBox = context.findRenderObject() as RenderBox;
+                        Offset localPos = renderBox.globalToLocal(details.globalPosition);
+                        currentStroke = [DrawnPoint(localPos, const Color(0xFF8A70D6))];
+                      });
+                    },
+                    onPanUpdate: (details) {
+                      setState(() {
+                        RenderBox renderBox = context.findRenderObject() as RenderBox;
+                        Offset localPos = renderBox.globalToLocal(details.globalPosition);
+                        currentStroke.add(DrawnPoint(localPos, const Color(0xFF8A70D6)));
+                      });
+                    },
+                    onPanEnd: (details) {
+                      setState(() {
+                        strokes.add(List.from(currentStroke));
+                        _analyzeStroke();
+                      });
+                    },
+                    child: Stack(
+                      children: [
+                        Center(
+                          child: _buildBackgroundGuideText(selectedChar),
+                        ),
+                        CustomPaint(
+                          painter: CanvasPainter(strokes: strokes, currentStroke: currentStroke),
+                          size: Size.infinite,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: _clearCanvas,
+                  icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+                  label: const Text("다시 쓰기", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF8DA1),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBackgroundGuideText(String char) {
+    final guideColor = const Color(0xFFFFE4E1).withOpacity(0.45);
+
+    if (char.length == 2) {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            char[0],
+            style: TextStyle(
+              fontSize: 130,
+              color: guideColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 25.0),
+            child: Text(
+              char[1],
+              style: TextStyle(
+                fontSize: 75,
+                color: guideColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      );
+    } else if (char == 'っ') {
+      return Align(
+        alignment: const Alignment(0.5, 0.5),
+        child: Text(
+          'っ',
+          style: TextStyle(
+            fontSize: 90,
+            color: guideColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      );
+    } else {
+      return Text(
+        char,
+        style: TextStyle(
+          fontSize: 160,
+          color: guideColor,
+          fontWeight: FontWeight.bold,
+        ),
+      );
+    }
+  }
+
+  Widget _buildCharGrid(List<String> charList) {
+    return ListView.builder(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      itemCount: charList.length,
+      itemBuilder: (context, index) {
+        String char = charList[index];
+        bool isSelected = char == selectedChar;
+        return GestureDetector(
+          onTap: () => _selectCharacter(char),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(
+              color: isSelected ? const Color(0xFFFF8DA1) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isSelected ? const Color(0xFFFF8DA1) : const Color(0xFFFFD1DC),
+                width: 2,
+              ),
+            ),
+            child: Center(
+              child: Text(
+                char,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? Colors.white : const Color(0xFF7A6851),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class CanvasPainter extends CustomPainter {
+  final List<List<DrawnPoint>> strokes;
+  final List<DrawnPoint> currentStroke;
+
+  CanvasPainter({required this.strokes, required this.currentStroke});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    Paint gridPaint = Paint()
+      ..color = const Color(0xFFFFE4E1)
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+
+    canvas.drawLine(Offset(size.width / 2, 0), Offset(size.width / 2, size.height), gridPaint);
+    canvas.drawLine(Offset(0, size.height / 2), Offset(size.width, size.height / 2), gridPaint);
+
+    Paint strokePaint = Paint()
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..strokeWidth = 8.0;
+
+    void drawStroke(List<DrawnPoint> points) {
+      for (int i = 0; i < points.length - 1; i++) {
+        strokePaint.color = points[i].color;
+        canvas.drawLine(points[i].offset, points[i + 1].offset, strokePaint);
+      }
+    }
+
+    for (var stroke in strokes) {
+      drawStroke(stroke);
+    }
+    drawStroke(currentStroke);
+  }
+
+  @override
+  bool shouldRepaint(covariant CanvasPainter oldDelegate) => true;
+}
