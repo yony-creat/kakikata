@@ -8,28 +8,39 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: #FFF9FA; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding-bottom: 20px; }
     
-    /* 상단 헤더 & 탭 */
-    header { width: 100%; background-color: #FFFFB7C5; color: white; text-align: center; padding: 16px 0 10px 0; font-weight: bold; font-size: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-    .tabs { display: flex; width: 100%; background-color: #FFFFB7C5; border-top: 1px solid rgba(255,255,255,0.3); }
-    .tab-btn { flex: 1; padding: 10px 0; border: none; background: none; color: rgba(255,255,255,0.8); font-weight: bold; font-size: 13px; cursor: pointer; border-bottom: 3px solid transparent; }
-    .tab-btn.active { color: white; border-bottom-color: white; }
+    /* 상단 헤더 & 탭 가독성 강화 */
+    header { width: 100%; background-color: #FF8DA1; color: white; text-align: center; padding: 16px 0 10px 0; font-weight: bold; font-size: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .tabs { display: flex; width: 100%; background-color: #FF8DA1; border-top: 1px solid rgba(255,255,255,0.4); }
+    .tab-btn { flex: 1; padding: 12px 0; border: none; background: none; color: #FFF0F3; font-weight: bold; font-size: 15px; cursor: pointer; border-bottom: 4px solid transparent; transition: all 0.2s; }
+    .tab-btn.active { color: #FFFFFF; border-bottom-color: #FFFFFF; font-weight: 800; background-color: rgba(255, 255, 255, 0.15); }
 
     /* 글자 선택 목록 */
-    .char-scroll { width: 100%; display: flex; overflow-x: auto; padding: 10px 12px; gap: 8px; border-bottom: 1px solid #FFD1DC; white-space: nowrap; }
-    .char-card { padding: 6px 14px; background: white; border: 2px solid #FFD1DC; border-radius: 14px; color: #7A6851; font-weight: bold; font-size: 18px; cursor: pointer; flex-shrink: 0; }
+    .char-scroll { width: 100%; display: flex; overflow-x: auto; padding: 12px 16px; gap: 8px; border-bottom: 1px solid #FFD1DC; white-space: nowrap; background: #FFF; }
+    .char-card { padding: 8px 16px; background: white; border: 2px solid #FFD1DC; border-radius: 16px; color: #7A6851; font-weight: bold; font-size: 18px; cursor: pointer; flex-shrink: 0; }
     .char-card.active { background: #FF8DA1; color: white; border-color: #FF8DA1; }
 
     /* 피드백 안내 카드 */
-    .feedback-box { width: 90%; max-width: 320px; margin: 12px auto; padding: 12px 16px; background: white; border-radius: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 10px; }
-    .feedback-text { color: #7A6851; font-size: 13px; font-weight: 600; line-height: 1.4; }
+    .feedback-box { width: 90%; max-width: 340px; margin: 14px auto; padding: 12px 16px; background: white; border-radius: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 10px; border: 1px solid #FFE4E1; }
+    .feedback-text { color: #5A4A3A; font-size: 14px; font-weight: 600; line-height: 1.4; }
 
     /* 캔버스 영역 */
     .canvas-container { position: relative; width: 280px; height: 280px; background: white; border: 3px solid #FFD1DC; border-radius: 24px; box-shadow: 0 8px 20px rgba(255,183,197,0.25); overflow: hidden; margin: 8px 0; touch-action: none; }
-    .guide-text { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; font-size: 150px; font-weight: bold; color: rgba(255,228,225,0.55); pointer-events: none; user-select: none; }
+    .guide-text { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; font-size: 150px; font-weight: bold; color: rgba(255,228,225,0.6); pointer-events: none; user-select: none; }
     canvas { width: 100%; height: 100%; cursor: crosshair; }
 
-    /* 버튼 */
-    .btn-clear { margin-top: 12px; padding: 10px 24px; background: #FF8DA1; color: white; border: none; border-radius: 16px; font-size: 14px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(255,141,161,0.3); }
+    /* 하단 버튼 */
+    .btn-clear { margin-top: 14px; padding: 12px 28px; background: #FF8DA1; color: white; border: none; border-radius: 18px; font-size: 15px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(255,141,161,0.3); }
+
+    /* 완성 결과 팝업 모달 */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); justify-content: center; align-items: center; z-index: 1000; }
+    .modal-content { background: white; padding: 24px 28px; border-radius: 24px; text-align: center; max-width: 300px; width: 85%; box-shadow: 0 10px 25px rgba(0,0,0,0.15); animation: popUp 0.25s ease-out; }
+    @keyframes popUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .modal-title { font-size: 20px; font-weight: bold; color: #4ECDC4; margin-bottom: 8px; }
+    .modal-desc { font-size: 14px; color: #666; margin-bottom: 20px; line-height: 1.4; }
+    .modal-btns { display: flex; gap: 10px; justify-content: center; }
+    .modal-btn { flex: 1; padding: 10px 0; border-radius: 14px; border: none; font-weight: bold; font-size: 14px; cursor: pointer; }
+    .btn-retry { background: #FF8DA1; color: white; }
+    .btn-close { background: #F0F0F0; color: #666; }
   </style>
 </head>
 <body>
@@ -45,7 +56,7 @@
   <div class="char-scroll" id="charList"></div>
 
   <div class="feedback-box">
-    <span id="feedbackIcon" style="font-size:20px;">💡</span>
+    <span id="feedbackIcon" style="font-size:22px;">💡</span>
     <span class="feedback-text" id="feedbackMsg">‘あ’ 획의 순서와 방향에 맞춰 예쁘게 써보세요! 🌸</span>
   </div>
 
@@ -55,6 +66,18 @@
   </div>
 
   <button class="btn-clear" onclick="clearCanvas()">🌸 다시 쓰기</button>
+
+  <!-- 완판 안내 팝업 -->
+  <div class="modal-overlay" id="resultModal">
+    <div class="modal-content">
+      <div class="modal-title">🎉 참 잘했어요!</div>
+      <div class="modal-desc"><b id="modalCharName">‘あ’</b> 글씨를 멋지게 완성했습니다.<br>다시 써보시겠어요?</div>
+      <div class="modal-btns">
+        <button class="modal-btn btn-close" onclick="closeModal()">닫기</button>
+        <button class="modal-btn btn-retry" onclick="retryFromModal()">다시 쓰기</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     const data = {
@@ -66,6 +89,7 @@
     let currentCategory = 'basic';
     let selectedChar = 'あ';
     let isDrawing = false;
+    let strokeCount = 0;
 
     const canvas = document.getElementById('paintCanvas');
     const ctx = canvas.getContext('2d');
@@ -128,7 +152,13 @@
         return { x: clientX - rect.left, y: clientY - rect.top };
       };
 
-      const start = (e) => { isDrawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); };
+      const start = (e) => { 
+        isDrawing = true; 
+        ctx.beginPath(); 
+        const p = getPos(e); 
+        ctx.moveTo(p.x, p.y); 
+      };
+
       const move = (e) => {
         if (!isDrawing) return;
         const p = getPos(e);
@@ -139,11 +169,19 @@
         ctx.lineTo(p.x, p.y);
         ctx.stroke();
       };
+
       const stop = () => {
         if (isDrawing) {
           isDrawing = false;
+          strokeCount++;
+
           document.getElementById('feedbackIcon').innerText = '🎉';
-          document.getElementById('feedbackMsg').innerText = `‘${selectedChar}’ 글씨를 멋지게 쓰는 중이에요! 참 잘했어요! ✨🌸`;
+          document.getElementById('feedbackMsg').innerText = `‘${selectedChar}’ 획을 멋지게 그렸어요! 완성도가 높네요! ✨🌸`;
+
+          // 획 작성을 마치면 완성 팝업 호출 (0.5초 후 자연스럽게)
+          setTimeout(() => {
+            showResultModal();
+          }, 400);
         }
       };
 
@@ -156,9 +194,24 @@
       window.addEventListener('touchend', stop);
     }
 
+    function showResultModal() {
+      document.getElementById('modalCharName').innerText = `‘${selectedChar}’`;
+      document.getElementById('resultModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('resultModal').style.display = 'none';
+    }
+
+    function retryFromModal() {
+      closeModal();
+      clearCanvas();
+    }
+
     function clearCanvas() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawGrid();
+      strokeCount = 0;
       document.getElementById('feedbackIcon').innerText = '💡';
     }
 
