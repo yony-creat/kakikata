@@ -1,415 +1,168 @@
-import 'package:flutter/material.dart';
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>히라가나 손글씨 교정 🌸</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: #FFF9FA; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding-bottom: 20px; }
+    
+    /* 상단 헤더 & 탭 */
+    header { width: 100%; background-color: #FFFFB7C5; color: white; text-align: center; padding: 16px 0 10px 0; font-weight: bold; font-size: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .tabs { display: flex; width: 100%; background-color: #FFFFB7C5; border-top: 1px solid rgba(255,255,255,0.3); }
+    .tab-btn { flex: 1; padding: 10px 0; border: none; background: none; color: rgba(255,255,255,0.8); font-weight: bold; font-size: 13px; cursor: pointer; border-bottom: 3px solid transparent; }
+    .tab-btn.active { color: white; border-bottom-color: white; }
 
-void main() {
-  runApp(const HiraganaApp());
-}
+    /* 글자 선택 목록 */
+    .char-scroll { width: 100%; display: flex; overflow-x: auto; padding: 10px 12px; gap: 8px; border-bottom: 1px solid #FFD1DC; white-space: nowrap; }
+    .char-card { padding: 6px 14px; background: white; border: 2px solid #FFD1DC; border-radius: 14px; color: #7A6851; font-weight: bold; font-size: 18px; cursor: pointer; flex-shrink: 0; }
+    .char-card.active { background: #FF8DA1; color: white; border-color: #FF8DA1; }
 
-class HiraganaApp extends StatelessWidget {
-  const HiraganaApp({super.key});
+    /* 피드백 안내 카드 */
+    .feedback-box { width: 90%; max-width: 320px; margin: 12px auto; padding: 12px 16px; background: white; border-radius: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 10px; }
+    .feedback-text { color: #7A6851; font-size: 13px; font-weight: 600; line-height: 1.4; }
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        fontFamily: 'Pretendard',
-        scaffoldBackgroundColor: const Color(0xFFFFF9FA),
-      ),
-      home: const HandwritingCanvasScreen(),
-    );
-  }
-}
+    /* 캔버스 영역 */
+    .canvas-container { position: relative; width: 280px; height: 280px; background: white; border: 3px solid #FFD1DC; border-radius: 24px; box-shadow: 0 8px 20px rgba(255,183,197,0.25); overflow: hidden; margin: 8px 0; touch-action: none; }
+    .guide-text { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; font-size: 150px; font-weight: bold; color: rgba(255,228,225,0.55); pointer-events: none; user-select: none; }
+    canvas { width: 100%; height: 100%; cursor: crosshair; }
 
-class DrawnPoint {
-  final Offset offset;
-  final Color color;
-  DrawnPoint(this.offset, this.color);
-}
+    /* 버튼 */
+    .btn-clear { margin-top: 12px; padding: 10px 24px; background: #FF8DA1; color: white; border: none; border-radius: 16px; font-size: 14px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(255,141,161,0.3); }
+  </style>
+</head>
+<body>
 
-class HandwritingCanvasScreen extends StatefulWidget {
-  const HandwritingCanvasScreen({super.key});
+  <header>히라가나 손글씨 교정 🌸</header>
+  
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('basic')">기본음 (46자)</button>
+    <button class="tab-btn" onclick="switchTab('dakuon')">탁음/반탁음</button>
+    <button class="tab-btn" onclick="switchTab('youon')">요음/촉음</button>
+  </div>
 
-  @override
-  State<HandwritingCanvasScreen> createState() => _HandwritingCanvasScreenState();
-}
+  <div class="char-scroll" id="charList"></div>
 
-class _HandwritingCanvasScreenState extends State<HandwritingCanvasScreen> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+  <div class="feedback-box">
+    <span id="feedbackIcon" style="font-size:20px;">💡</span>
+    <span class="feedback-text" id="feedbackMsg">‘あ’ 획의 순서와 방향에 맞춰 예쁘게 써보세요! 🌸</span>
+  </div>
 
-  // 히라가나 46자 전체 목록 (오음순)
-  final List<String> basicList = [
-    'あ', 'い', 'う', 'え', 'お',
-    'か', 'き', 'く', 'け', 'こ',
-    'さ', 'し', 'す', 'せ', 'そ',
-    'た', 'ち', 'つ', 'て', 'と',
-    'な', 'に', 'ぬ', 'ね', 'の',
-    'は', 'ひ', 'ふ', 'へ', 'ほ',
-    'ま', 'み', 'む', 'め', 'も',
-    'や', 'ゆ', 'よ',
-    'ら', 'り', 'る', 'れ', 'ろ',
-    'わ', 'を', 'ん'
-  ];
+  <div class="canvas-container">
+    <div class="guide-text" id="guideText">あ</div>
+    <canvas id="paintCanvas" width="280" height="280"></canvas>
+  </div>
 
-  // 탁음 & 반탁음 전체 25자
-  final List<String> dakuonList = [
-    'が', 'ぎ', 'ぐ', 'げ', 'ご',
-    'ざ', 'じ', 'ず', 'ぜ', 'ぞ',
-    'だ', 'ぢ', 'づ', 'で', 'ど',
-    'ば', 'び', 'ぶ', 'べ', 'ぼ',
-    'ぱ', 'ぴ', 'ぷ', 'ぺ', 'ぽ'
-  ];
+  <button class="btn-clear" onclick="clearCanvas()">🌸 다시 쓰기</button>
 
-  // 요음 & 촉음 전체 34자
-  final List<String> youonList = [
-    'きゃ', 'きゅ', 'きょ',
-    'しゃ', 'しゅ', 'しょ',
-    'ちゃ', 'ちゅ', 'ちょ',
-    'にゃ', 'にゅ', 'にょ',
-    'ひゃ', 'ひゅ', 'ひょ',
-    'みゃ', 'みゅ', 'みょ',
-    'りゃ', 'りゅ', 'りょ',
-    'ぎゃ', 'ぎゅ', 'ぎょ',
-    'じゃ', 'じゅ', 'じょ',
-    'びゃ', 'びゅ', 'びょ',
-    'ぴゃ', 'ぴゅ', 'ぴょ',
-    'っ'
-  ];
+  <script>
+    const data = {
+      basic: ['あ','い','う','え','お','か','き','く','け','こ','さ','し','す','せ','そ','た','ち','つ','て','と','な','に','ぬ','ね','の','は','ひ','ふ','へ','ほ','ま','み','む','め','も','や','ゆ','よ','ら','り','る','れ','ろ','わ','を','ん'],
+      dakuon: ['が','ぎ','ぐ','げ','ご','ざ','じ','ず','ぜ','ぞ','だ','ぢ','づ','で','ど','ば','び','ぶ','べ','ぼ','ぱ','ぴ','ぷ','ぺ','ぽ'],
+      youon: ['きゃ','きゅ','きょ','しゃ','しゅ','しょ','ちゃ','ちゅ','ちょ','にゃ','にゅ','にょ','ひゃ','ひゅ','ひょ','みゃ','みゅ','みょ','りゃ','りゅ','りょ','ぎゃ','ぎゅ','ぎょ','じゃ','じゅ','じょ','びゃ','びゅ','びょ','ぴゃ','ぴゅ','ぴょ','っ']
+    };
 
-  String selectedChar = 'あ';
-  List<List<DrawnPoint>> strokes = [];
-  List<DrawnPoint> currentStroke = [];
+    let currentCategory = 'basic';
+    let selectedChar = 'あ';
+    let isDrawing = false;
 
-  String feedbackMessage = "‘あ’ 획의 순서와 방향에 맞춰 예쁘게 써보세요! 🌸";
-  Color feedbackColor = const Color(0xFF7A6851);
-  bool isSuccess = false;
+    const canvas = document.getElementById('paintCanvas');
+    const ctx = canvas.getContext('2d');
 
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-  }
+    function init() {
+      drawGrid();
+      renderCharList();
+      setupCanvasEvents();
+    }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
+    function switchTab(category) {
+      currentCategory = category;
+      document.querySelectorAll('.tab-btn').forEach((btn, idx) => {
+        btn.classList.toggle('active', (category==='basic'&&idx===0)||(category==='dakuon'&&idx===1)||(category==='youon'&&idx===2));
+      });
+      selectedChar = data[category][0];
+      renderCharList();
+      selectChar(selectedChar);
+    }
 
-  void _selectCharacter(String char) {
-    setState(() {
+    function renderCharList() {
+      const container = document.getElementById('charList');
+      container.innerHTML = '';
+      data[currentCategory].forEach(char => {
+        const btn = document.createElement('div');
+        btn.className = `char-card ${char === selectedChar ? 'active' : ''}`;
+        btn.innerText = char;
+        btn.onclick = () => selectChar(char);
+        container.appendChild(btn);
+      });
+    }
+
+    function selectChar(char) {
       selectedChar = char;
-      strokes.clear();
-      currentStroke.clear();
-      isSuccess = false;
+      document.getElementById('guideText').innerText = char;
+      renderCharList();
+      clearCanvas();
       
-      if (char == 'っ') {
-        feedbackMessage = "‘っ’ (촉음): 오른쪽 아래에 작게 쓰는 것이 포인트예요! ✨";
-      } else if (char.length > 1) {
-        feedbackMessage = "‘$char’ (요음): 오른쪽 아래 작은 글자의 비율과 위치에 유의하세요! 💡";
-      } else if (dakuonList.contains(char)) {
-        feedbackMessage = "‘$char’ (탁음/반탁음): 본체를 다 쓴 후 마지막에 점(゛/゜)을 찍어보세요! 💡";
-      } else {
-        feedbackMessage = "‘$char’ 획의 순서와 방향에 맞춰 예쁘게 써보세요! 🌸";
-      }
-      feedbackColor = const Color(0xFF7A6851);
-    });
-  }
-
-  void _analyzeStroke() {
-    if (currentStroke.length < 5) return;
-
-    setState(() {
-      feedbackMessage = "‘$selectedChar’ 글씨를 멋지게 쓰는 중이에요! 참 잘했어요! ✨🌸";
-      feedbackColor = const Color(0xFF4ECDC4);
-      isSuccess = true;
-    });
-  }
-
-  void _clearCanvas() {
-    setState(() {
-      strokes.clear();
-      currentStroke.clear();
-      _selectCharacter(selectedChar);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFFFB7C5),
-        title: const Text(
-          "히라가나 손글씨 교정 🌸",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
-        elevation: 0,
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Colors.white,
-          indicatorWeight: 3,
-          labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-          tabs: const [
-            Tab(text: "기본음 (46자)"),
-            Tab(text: "탁음/반탁음"),
-            Tab(text: "요음/촉음"),
-          ],
-        ),
-      ),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Column(
-          children: [
-            SizedBox(
-              height: 65,
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildCharGrid(basicList),
-                  _buildCharGrid(dakuonList),
-                  _buildCharGrid(youonList),
-                ],
-              ),
-            ),
-            const Divider(height: 1, color: Color(0xFFFFD1DC)),
-            const SizedBox(height: 10),
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  )
-                ],
-              ),
-              child: Row(
-                children: [
-                  Text(
-                    isSuccess ? "🎉" : "💡",
-                    style: const TextStyle(fontSize: 20),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      feedbackMessage,
-                      style: TextStyle(
-                        color: feedbackColor,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            Center(
-              child: Container(
-                width: 280,
-                height: 280,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: const Color(0xFFFFD1DC), width: 3),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFFFFB7C5).withOpacity(0.2),
-                      blurRadius: 15,
-                      spreadRadius: 2,
-                    )
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(21),
-                  child: GestureDetector(
-                    onPanStart: (details) {
-                      setState(() {
-                        RenderBox renderBox = context.findRenderObject() as RenderBox;
-                        Offset localPos = renderBox.globalToLocal(details.globalPosition);
-                        currentStroke = [DrawnPoint(localPos, const Color(0xFF8A70D6))];
-                      });
-                    },
-                    onPanUpdate: (details) {
-                      setState(() {
-                        RenderBox renderBox = context.findRenderObject() as RenderBox;
-                        Offset localPos = renderBox.globalToLocal(details.globalPosition);
-                        currentStroke.add(DrawnPoint(localPos, const Color(0xFF8A70D6)));
-                      });
-                    },
-                    onPanEnd: (details) {
-                      setState(() {
-                        strokes.add(List.from(currentStroke));
-                        _analyzeStroke();
-                      });
-                    },
-                    child: Stack(
-                      children: [
-                        Center(
-                          child: _buildBackgroundGuideText(selectedChar),
-                        ),
-                        CustomPaint(
-                          painter: CanvasPainter(strokes: strokes, currentStroke: currentStroke),
-                          size: Size.infinite,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 14),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: _clearCanvas,
-                  icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-                  label: const Text("다시 쓰기", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF8DA1),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBackgroundGuideText(String char) {
-    final guideColor = const Color(0xFFFFE4E1).withOpacity(0.45);
-
-    if (char.length == 2) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Text(
-            char[0],
-            style: TextStyle(
-              fontSize: 130,
-              color: guideColor,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 25.0),
-            child: Text(
-              char[1],
-              style: TextStyle(
-                fontSize: 75,
-                color: guideColor,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      );
-    } else if (char == 'っ') {
-      return Align(
-        alignment: const Alignment(0.5, 0.5),
-        child: Text(
-          'っ',
-          style: TextStyle(
-            fontSize: 90,
-            color: guideColor,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      );
-    } else {
-      return Text(
-        char,
-        style: TextStyle(
-          fontSize: 160,
-          color: guideColor,
-          fontWeight: FontWeight.bold,
-        ),
-      );
-    }
-  }
-
-  Widget _buildCharGrid(List<String> charList) {
-    return ListView.builder(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      itemCount: charList.length,
-      itemBuilder: (context, index) {
-        String char = charList[index];
-        bool isSelected = char == selectedChar;
-        return GestureDetector(
-          onTap: () => _selectCharacter(char),
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFFFF8DA1) : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isSelected ? const Color(0xFFFF8DA1) : const Color(0xFFFFD1DC),
-                width: 2,
-              ),
-            ),
-            child: Center(
-              child: Text(
-                char,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: isSelected ? Colors.white : const Color(0xFF7A6851),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class CanvasPainter extends CustomPainter {
-  final List<List<DrawnPoint>> strokes;
-  final List<DrawnPoint> currentStroke;
-
-  CanvasPainter({required this.strokes, required this.currentStroke});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    Paint gridPaint = Paint()
-      ..color = const Color(0xFFFFE4E1)
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke;
-
-    canvas.drawLine(Offset(size.width / 2, 0), Offset(size.width / 2, size.height), gridPaint);
-    canvas.drawLine(Offset(0, size.height / 2), Offset(size.width, size.height / 2), gridPaint);
-
-    Paint strokePaint = Paint()
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..strokeWidth = 8.0;
-
-    void drawStroke(List<DrawnPoint> points) {
-      for (int i = 0; i < points.length - 1; i++) {
-        strokePaint.color = points[i].color;
-        canvas.drawLine(points[i].offset, points[i + 1].offset, strokePaint);
-      }
+      const msg = document.getElementById('feedbackMsg');
+      if (char === 'っ') msg.innerText = "‘っ’ (촉음): 오른쪽 아래 작게 쓰는 게 포인트예요! ✨";
+      else if (char.length > 1) msg.innerText = `‘${char}’ (요음): 오른쪽 아래 작은 글자 비율에 유의하세요! 💡`;
+      else if (currentCategory === 'dakuon') msg.innerText = `‘${char}’ (탁음): 본체 작성 후 점(゛/゜)을 찍어보세요! 💡`;
+      else msg.innerText = `‘${char}’ 획의 순서와 방향에 맞춰 예쁘게 써보세요! 🌸`;
     }
 
-    for (var stroke in strokes) {
-      drawStroke(stroke);
+    function drawGrid() {
+      ctx.strokeStyle = '#FFE4E1';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(140, 0); ctx.lineTo(140, 280);
+      ctx.moveTo(0, 140); ctx.lineTo(280, 140);
+      ctx.stroke();
     }
-    drawStroke(currentStroke);
-  }
 
-  @override
-  bool shouldRepaint(covariant CanvasPainter oldDelegate) => true;
-}
+    function setupCanvasEvents() {
+      const getPos = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: clientX - rect.left, y: clientY - rect.top };
+      };
+
+      const start = (e) => { isDrawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); };
+      const move = (e) => {
+        if (!isDrawing) return;
+        const p = getPos(e);
+        ctx.strokeStyle = '#8A70D6';
+        ctx.lineWidth = 8;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+      };
+      const stop = () => {
+        if (isDrawing) {
+          isDrawing = false;
+          document.getElementById('feedbackIcon').innerText = '🎉';
+          document.getElementById('feedbackMsg').innerText = `‘${selectedChar}’ 글씨를 멋지게 쓰는 중이에요! 참 잘했어요! ✨🌸`;
+        }
+      };
+
+      canvas.addEventListener('mousedown', start);
+      canvas.addEventListener('mousemove', move);
+      window.addEventListener('mouseup', stop);
+
+      canvas.addEventListener('touchstart', start);
+      canvas.addEventListener('touchmove', move);
+      window.addEventListener('touchend', stop);
+    }
+
+    function clearCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawGrid();
+      document.getElementById('feedbackIcon').innerText = '💡';
+    }
+
+    init();
+  </script>
+</body>
+</html>
